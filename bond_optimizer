@@ -1,0 +1,72 @@
+
+
+# import relevent libraries
+import numpy as np
+import math
+from pulp import LpProblem, LpVariable, lpSum, LpMaximize, value
+
+
+
+# Variables
+
+bond_list = ['1', '2', '3', '4']
+
+
+expected_return =  {'1': .1,
+                    '2': .08,
+                    '3': .11,
+                    '4': .14}
+
+worst_case_return = {'1': .06,
+                     '2': .08,
+                     '3': .10,
+                     '4': .09}
+
+duration =          {'1': 7,
+                     '2': 4,
+                     '3': 7,
+                     '4': 9}   
+
+total_investment = 1000000
+worst_case_annual_return = .08
+max_duration = 7
+max_investment = 450000
+
+# Define Problem
+prob = LpProblem("Bond Composition Problem", LpMaximize)
+
+
+# Initialize variables with variable dictionaries
+bond_features = LpVariable.dicts('bonds', bond_list, 0, None)
+
+
+# Append objective function to problem
+prob += lpSum(expected_return[i]*bond_features[i] for i in bond_list)
+
+
+# Constraint 1 (Total Amount)
+prob += lpSum(bond_features[i] for i in bond_list) == total_investment
+
+# Constraint 2 (Worst case annual return)
+prob += lpSum(worst_case_return[i] * bond_features[i] for i in bond_list) >= worst_case_annual_return * total_investment
+
+# Constraint 3 (Max investment percentage)
+prob += bond_features["1"] <= max_investment 
+prob += bond_features["2"] <= max_investment
+prob += bond_features["3"] <= max_investment
+prob += bond_features["4"] <= max_investment
+
+
+
+
+# Constraint 4 (Max duration)
+prob += lpSum(duration[i] for i in bond_list) <= max_duration * total_investment
+
+
+solution = prob.solve()
+
+
+for variable in prob.variables():
+    print(variable.name, " ", variable.varValue)
+    
+
